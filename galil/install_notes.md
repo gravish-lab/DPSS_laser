@@ -20,3 +20,7 @@ static routers=192.168.0.1
 static domain_name_servers=192.168.0.1
 '''
 
+# Install and configure ps3 controller
+
+https://github.com/RetroPie/RetroPie-Setup
+
