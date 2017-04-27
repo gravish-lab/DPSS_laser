@@ -1,0 +1,322 @@
+
+<CutToLength>:
+    canvas.before:
+        Color:
+            rgba: .7, .7, .7, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    BoxLayout:
+        orientation: 'vertical'
+        ActionBar:
+            ActionView:
+                id: av
+                ActionPrevious:
+                    id: avTitle
+                    with_previous: False
+                    title: 'Galil Motion Control'
+                    app_icon: 'galil.png'
+                ActionSeparator:
+                ActionButton:
+                    text: 'Disconnect'#TODO: Implement Disconnect
+                    on_press: root.disconnectAndRefresh()
+                ActionSeparator:
+                ActionButton:
+                    text: '  E-STOP  '#TODO: Implement ESTOP
+                    background_normal: ''
+                    background_color: [.72, .14, .14, 1]
+                    on_press: root.eStop()
+                ActionSeparator:
+
+        Accordion:
+            orientation: 'horizontal'
+            AccordionItem:
+                id: chooseController
+                title: 'Choose Controller'
+                collapse: False
+                BoxLayout:
+                    id: controllerBox
+                    orientation: 'vertical'
+                    StackLayout:
+                        id: row1
+                        orientation: 'lr-tb'
+                        padding: [10,10,10,10]
+            AccordionItem:
+                id: homeSetup
+                title: 'Homing and Setup'
+                BoxLayout:
+                    id: homingBox
+                    orientation: 'vertical'
+                    StackLayout:
+                        id: row2
+                        orientation: 'lr-tb'
+                        padding: [10,10,10,10]
+    #First Row
+                        Label:
+                            height: 100
+                            size_hint: (.25, .15)
+                            text: 'Motor Position (TP)'
+                            markup: True
+                        Label:
+                            id: TPA
+                            height: 100
+                            size_hint: (.25, .15)
+                            text: '[b]182727[/b]'
+                            markup: True
+                            font_size: 22
+                        Label:
+                            height: 100
+                            size_hint: (.25, .15)
+                            text: 'Axis Stutus'
+                            markup: True
+                        Label:
+                            id: _BGA
+                            height: 100
+                            size_hint: (.25, .15)
+                            text: '[b]Idle[/b]'
+                            markup: True
+                            font_size: 14
+    #Second Row
+                        Label:
+                            height: 100
+                            size_hint: (.25, .15)
+                            text: 'Reverse Limit Switch'
+                        CheckBox:
+                            id: _RLA
+                            size_hint: (.05, .15)
+                            group: 'rl'
+                            color: [3, 3, 3, 3]
+                        Label:
+                            height: 100
+                            size_hint: (.15, .15)
+                            text: 'Home Switch'
+                        CheckBox:
+                            id: _HMA
+                            size_hint: (.05, .15)
+                            group: 'hm'
+                            color: [3, 3, 3, 3]
+                        Label:
+                            height: 100
+                            size_hint: (.25, .15)
+                            text: 'Forward Limit Switch'
+                        CheckBox:
+                            id: _FLA
+                            size_hint: (.05, .15)
+                            group: 'fl'
+                            color: [3, 3, 3, 3]
+                        Label:
+                            height: 100
+                            size_hint: (.12, .15)
+                            text: 'Motor Off'
+                        CheckBox:
+                            id: _MOA
+                            size_hint: (.05, .15)
+                            group: 'mo'
+                            color: [3, 3, 3, 3]
+    #Spacer
+                        Label:
+                            height: 100
+                            size_hint: (1, .1)
+                            text: ''
+    #Third Row
+                        Label:
+                            height: 100
+                            size_hint: (.05, .15)
+                            text: ''
+                        Button:
+                            height: 100
+                            size_hint: (.2, .15)
+                            text: 'Stop'
+                            on_press: root.dmcCommand('ST')
+                        Button:
+                            height: 100
+                            size_hint: (.2, .15)
+                            text: 'Motor Off'
+                            #disabled: True
+                            on_press: root.dmcCommand('MO')
+                        Button:
+                            height: 100
+                            size_hint: (.2, .15)
+                            text: 'Servo Here'
+                            #disabled: True
+                            on_press: root.dmcCommand('SH')
+                        Label:
+                            height: 100
+                            size_hint: (.01, .15)
+                            text: ''
+                        Button:
+                            height: 100
+                            size_hint: (.2, .15)
+                            text: 'Home Axis'
+                            #In this example, no physical limit switch is wired in.
+                            #If home switch is wired in than use the HM command
+                            on_press: root.dmcCommand('pa=0') 
+                        Label:
+                            height: 100
+                            size_hint: (.05, .15)
+                            text: ''
+    #Spacer
+                        Label:
+                            height: 100
+                            size_hint: (1, .1)
+                            text: ''
+    #Forth Row
+                        Label:
+                            height: 100
+                            size_hint: (.2, .1)
+                            text: 'Axis Position'
+                        Slider:
+                            id: slider_TPA
+                            range: root.sliderRange 
+                            orientation: 'horizontal'
+                            value: 0
+                            size_hint: (.75, .1)
+                            disabled: True
+                        Label:
+                            height: 100
+                            size_hint: (.05, .1)
+                            text: ''
+    #Spacer
+                        Label:
+                            height: 100
+                            size_hint: (1, .001)
+                            text: ''
+    #Fifth Row
+                        Label:
+                            height: 100
+                            size_hint: (.2, .1)
+                            text: 'Set Axis Position'
+                        Slider:
+                            id: slider_PAA
+                            range: root.sliderRange
+                            orientation: 'horizontal'
+                            value: 0
+                            size_hint: (.75, .1)
+                            on_touch_up: root.sliderMove(*args)
+                        Label:
+                            height: 100
+                            size_hint: (.05, .1)
+                            text: ''
+            AccordionItem:
+                id: cutToLength
+                title: 'Cut to Length'
+                BoxLayout:
+                    id: homingBox
+                    orientation: 'vertical'
+                    StackLayout:
+                        id: row33
+                        orientation: 'lr-tb'
+                        padding: [10,10,10,10]
+    #First Row
+                        Label:
+                            height: 100
+                            size_hint: (.15, .15)
+                            text: '# of Cuts'
+                            markup: True
+                            #font_size: 14
+                        TextInput:
+                            id: numCuts
+                            size_hint: (.1, .1)
+                            text: '10'
+                        Button:
+                            height: 100
+                            size_hint: (.1, .1)
+                            text: '+1'
+                            on_press: root.addToCuts(1)
+                        Button:
+                            height: 100
+                            size_hint: (.1, .1)
+                            text: '-1'
+                            on_press: root.addToCuts(-1)
+                        Label:
+                            height: 100
+                            size_hint: (.3, .15)
+                            text: 'Enter Length (Counts)'
+                            markup: True
+                        TextInput:
+                            id: cutLen
+                            size_hint: (.15, .1)
+                            text: str(root.cutLengthDefault)
+
+                        Label:
+                            height: 100
+                            size_hint: (.9, .1)
+                            text: ''
+    #Second Row
+                        Button:
+                            height: 100
+                            size_hint: (.3, .15)
+                            text: 'Begin Cut-To-Length'
+                            on_press: root.startCutToLength()
+                        Label:
+                            height: 100
+                            size_hint: (.1, .1)
+                            text: ''
+                        Button:
+                            height: 100
+                            size_hint: (.3, .15)
+                            text: 'Cancel Operation'
+                            #disabled: True
+                            on_press: root.stopCutToLength()
+                        Label:
+                            height: 100
+                            size_hint: (.2, .1)
+                            text: ''
+
+                        Label:
+                            height: 100
+                            size_hint: (.9, .1)
+                            text: ''
+
+    #Third Row
+                        Label:
+                            height: 100
+                            size_hint: (.2, .15)
+                            text: 'Current Cut'
+                            markup: True
+                            #font_size: 14
+                        Label:
+                            id:currentCut
+                            height: 100
+                            size_hint: (.1, .15)
+                            text: '[b]1[/b]'
+                            markup: True
+                            font_size: 14
+                        Label:
+                            height: 100
+                            size_hint: (.1, .15)
+                            text: 'Status: '
+                        Label:
+                            id: currentStatus
+                            height: 100
+                            size_hint: (.5, .15)
+                            text: '[b]Loading Material[/b]'
+                            markup: True
+                            font_size: 14
+    #Spacer
+                        Label:
+                            height: 100
+                            size_hint: (.95, .1)
+                            text: ''
+    #Forth Row
+                        Label:
+                            height: 100
+                            size_hint: (.2, .15)
+                            text: 'Axis Position'
+                            markup: True
+                            #font_size: 14
+                        Slider:
+                            id: cutPositionSlider
+                            range: root.sliderRange
+                            orientation: 'horizontal'
+                            value: 12340
+                            size_hint: (.6, .1)
+                            disabled: True
+                        Label:
+                            id: cutPosition
+                            height: 100
+                            size_hint: (.2, .15)
+                            text: '[b]12340[/b]'
+                            markup: True
+                            font_size: 14
