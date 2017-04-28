@@ -13,8 +13,8 @@ SH			;' Servo here (doesnt do anything here I think)
 JG 0,0 			;' Set jog moder and slew speeds
 BG XY 			;' Begin moving on these access (doesnt do anything I think)
 
-DC 2000000,2000000 	;' Set deceleration and acceleration values
-AC 2000000,2000000
+DC 20000,20000 	;' Set deceleration and acceleration values
+AC 20000,20000
 
 oncam=1 		;' Set cam as starting coord sys
 
@@ -22,17 +22,17 @@ SB 1 			;' "CAM VIEW" indicator light on
 CB 2 			;' "X-LIMIT" indicator light off
 CB 3 			;' "Y-LIMIT" indicator light off
 
-deltax=908779 		;' This is the x displacement between cam and cut origins
-deltay=9610 
+deltax=10870 		;' This is the x displacement between cam and cut origins
+deltay=0
 
 
 #LOOP
-JG 								;' Make sure we are in jog mode.
+JG 	;' Make sure we are in jog mode.
 
 xangle=(@AN[1]-2.69)/2.38
 yangle=(@AN[2]-2.29)/2.42
 
-JP#XNOTLOW,.07<@ABS[xangle] 					;' If x or y < 0.07, make 0
+JP#XNOTLOW,.07<@ABS[xangle] 	;' If x or y < 0.07, make 0
 xangle=0 
 #XNOTLOW
 
@@ -88,45 +88,34 @@ IF (@IN[5]=0)
 ENDIF
 JP#LOOP,@IN[1]=1
 
-;' Switches origins between cam and laser
 #SWITCHORIGIN 
 ST
 MC
 LM XY
-VS 400000;VA 2000000;VD 2000000;
-IF (oncam=1) ;' If we are in camera view...
-  curx=_TPA  ;' Save current position.
+VS 4000;VA 20000;VD 20000
+IF (oncam=1) 
+  curx=_TPA  
   cury=_TPB
-  NO Move offset amount (considering your current location)
-  NO and overshooting 1mm in both directions on purpose.
   LI deltax-curx-1000,deltay-cury-1000
-  LE;BGS ;' End input of LI commands, and begin sequence.
-  MC     ;' Wait until movement is complete.
-  WT 100 ;' This delay (in ms) is to allow for settling.
-  NO Next we measure where we are, using the encoders, and
-  NO calculate the required movement to complete the shift.
+  LE;BGS 
+  MC     
+  WT 100 
   actx=_TPA
   acty=_TPB
-  VS 40000;VA 400000;VD 400000;
+  VS 400;VA 4000;VD 4000;
   ST;MC;LM XY
   LI (deltax-actx),(deltay-acty)
   LE;BGS;MC
   WT 100
-  NO We should be right under the laser, but we will make one
-  NO final correction move to make absolutely sure.
   actx=_TPA
   acty=_TPB
   ST;MC;LM XY
   LI (deltax-actx),(deltay-acty)
   LE;BGS
   MC
-  NO This flag says we are not under the laser.
   oncam=0
-  NO Darken the "CAM VIEW" light.
   CB 1
 ELSE
-  NO The sequence below is similar, but moves us from the
-  NO laser view to the camera view.  Same 3-move sequence.
   IF (oncam=0)
     curx=_TPA
     cury=_TPB
@@ -136,7 +125,7 @@ ELSE
     WT 100
     actx=_TPA
     acty=_TPB
-    VS 40000;VA 400000;VD 400000;
+    VS 400;VA 4000;VD 4000;
     ST;MC;LM XY
     LI -actx,-acty
     LE;BGS
@@ -161,7 +150,7 @@ JP#LOOP
 ST
 MC
 LM XY
-VS 400000;VA 2000000;VD 2000000;
+VS 4000;VA 20000;VD 20000;
 IF (oncam=1)
   curx=_TPA
   cury=_TPB
@@ -171,15 +160,19 @@ IF (oncam=1)
   WT 100
   actx=_TPA
   acty=_TPB
-  VS 40000;VA 400000;VD 400000;
-  ST;MC;LM XY
+  VS 400;VA 4000;VD 4000;
+  ST
+  MC
+  LM XY
   LI -actx,-acty
   LE;BGS
   MC
   WT 100
   actx=_TPA
   acty=_TPB
-  ST;MC;LM XY
+  ST
+  MC
+  LM XY
   LI -actx,-acty
   LE;BGS
   MC
@@ -235,30 +228,30 @@ EN
 
 
 #LIMSWI
-DC 10000000,10000000
+DC 100000,100000
 ST
 MC
-DC 2000000,2000000
-SP 200000,200000
+DC 20000,20000
+SP 2000,2000
 IF (_LFX=0)
   NOIMG "+X limit hit!"
   SB 2
-  PR -50000,0;BGX;MC
+  PR -1000,0;BGX;MC
 ENDIF
 IF (_LRX=0)
   NOMG "-X limit hit!"
   SB 2
-  PR 50000,0;BGX;MC
+  PR 1000,0;BGX;MC
 ENDIF
 IF (_LFY=0)
   NOMG "+Y limit hit!"
   SB 3
-  PR 0,-50000;BGY;MC
+  PR 0,-1000;BGY;MC
 ENDIF
 IF (_LRY=0)
   NOMG "-Y limit hit!"
   SB 3
-  PR 0,50000;BGY;MC
+  PR 0,1000;BGY;MC
 ENDIF
 WT 500
 CB 2

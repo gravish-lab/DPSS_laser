@@ -67,6 +67,72 @@ ENDIF
 IF(@IN[5]=0)
 JGjogspd,0;JP#PADLOOP
 ENDIF
+JP#LOOP,@IN[1]=1
+#SWITCHORIGIN
+ST
+MC
+LMXY
+VS400000;VA2000000;VD 2000000
+IF(oncam=1)
+curx=_TPA
+cury=_TPB
+NO Move offset amount (considering your current location)
+NO and overshooting 1mm in both directions on purpose.
+LIdeltax-curx-1000,deltay-cury-1000
+LE;BGS
+MC
+WT100
+NO Next we measure where we are, using the encoders, and
+NO calculate the required movement to complete the shift.
+actx=_TPA
+acty=_TPB
+VS40000;VA400000;VD 400000
+ST;MC;LMXY
+LI(deltax-actx),(deltay-acty)
+LE;BGS;MC
+WT100
+NO We should be right under the laser, but we will make one
+NO final correction move to make absolutely sure.
+actx=_TPA
+acty=_TPB
+ST;MC;LMXY
+LI(deltax-actx),(deltay-acty)
+LE;BGS
+MC
+NO This flag says we are not under the laser.
+oncam=0
+NO Darken the "CAM VIEW" light.
+CB 1
+ELSE
+NO The sequence below is similar, but moves us from the
+NO laser view to the camera view.  Same 3-move sequence.
+IF(oncam=0)
+curx=_TPA
+cury=_TPB
+LI-curx-1000,-cury-1000
+LE;BGS
+MC
+WT100
+actx=_TPA
+acty=_TPB
+VS40000;VA400000;VD 400000
+ST;MC;LMXY
+LI-actx,-acty
+LE;BGS
+MC
+WT100
+actx=_TPA
+acty=_TPB
+ST;MC;LMXY
+LI-actx,-acty
+LE;BGS
+MC
+oncam=1
+SB1
+ENDIF
+ENDIF
+JG0,0
+BGX,Y
 JP#LOOP
 #HOME
 ST
