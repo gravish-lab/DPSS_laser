@@ -24,3 +24,6 @@ static domain_name_servers=192.168.0.1
 
 https://github.com/RetroPie/RetroPie-Setup
 
+In the setup go to manage packages and install the ps3 package. Then go to the setup instructions and pair the ps controller. Press the PS button while plugged into USB and then will be done.
+
+
