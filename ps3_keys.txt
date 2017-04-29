@@ -1,0 +1,14 @@
+
+2,3 x & y analog
+4 up nudge
+5 right nudge
+6 down nudge
+7 left nudge
+8 x-enable
+9 y-enable
+10 decrease speed
+11 increase speed
+12 Home
+13 Set origin
+14 Origin switch
+15 

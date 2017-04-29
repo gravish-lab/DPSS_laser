@@ -1,7 +1,5 @@
 #AUTO
 
-
-# configure motors, encoder, and coord sys
 MT -2.5,-2,1,1  	;' Configure the motors
 CE 0,2          	;' Configure encoders to quadrature and reverse quad
 DP 0,0          	;' Define the position of the encoders
@@ -25,12 +23,23 @@ CB 3 			;' "Y-LIMIT" indicator light off
 deltax=10870 		;' This is the x displacement between cam and cut origins
 deltay=0
 
+jogspeed = 5000
+
+d_up = 0
+d_down = 0
+d_left = 0
+d_right = 0
+
+x_enable = 0
+y_enable = 0
+
+a3 = 0 ;' speed select for nudges
 
 #LOOP
 JG 	;' Make sure we are in jog mode.
 
-xangle=(@AN[1]-2.69)/2.38
-yangle=(@AN[2]-2.29)/2.42
+xangle=(@AN[1]-2.583)/2.583
+yangle=(@AN[2]-2.583)/2.583
 
 JP#XNOTLOW,.07<@ABS[xangle] 	;' If x or y < 0.07, make 0
 xangle=0 
@@ -40,7 +49,8 @@ JP#XNOTHI,0.9>@ABS[xangle]
 xangle=0.9*xangle/@ABS[xangle]
 
 #XNOTHI
-JGX=((xangle*xangle*xangle*550300)-(xangle*1326))*(1-@IN[8]) 	;' Otherwise map to jog speed
+JGX=((xangle*xangle*xangle*550300)-(xangle*1326))*(x_enable) 	
+;' Otherwise map to jog speed
 
 JP#YNOTLOW,.07<@ABS[yangle]
 yangle=0
@@ -50,15 +60,17 @@ JP#YNOTHI,0.9>@ABS[yangle]
 yangle=0.9*yangle/@ABS[yangle]
 
 #YNOTHI
-JGY=((yangle*yangle*yangle*550300)-(yangle*1326))*(1-@IN[7])
+JGY=((yangle*yangle*yangle*550300)-(yangle*1326))*(y_enable)
 
-JP#LOOP,((@ABS[xangle]>0.1)|(@ABS[yangle]>0.1)) 		;' If still joysticking keep looping
+JP#LOOP,((@ABS[xangle]>0.1)|(@ABS[yangle]>0.1)) 		
+;' If still joysticking keep looping
 
 JP#SETORIG,@IN[6]=0    ;' Check for origin or home buttons
 JP#HOME,@IN[17]=0
 
-#PADLOOP 							;' Loop for keypad nudge movements
-a3=@AN[3]
+#PADLOOP 							
+;' Loop for keypad nudge movements
+
 IF (a3<0)
   a3=0
 ENDIF
@@ -74,25 +86,26 @@ ENDIF
 IF (a3>=2.54)
   jogspd=(26450*a3*a3*a3)-(201500*a3*a3)+(514400*a3)-439916
 ENDIF
-IF (@IN[2]=0)
+
+IF (d_up=1)
   JG 0,jogspd;JP#PADLOOP
 ENDIF
-IF (@IN[3]=0)
+IF (d_down=1)
   JG 0,-jogspd;JP#PADLOOP
 ENDIF
-IF (@IN[4]=0)
+IF (d_left=1)
   JG -jogspd,0;JP#PADLOOP
 ENDIF
-IF (@IN[5]=0)
+IF (d_right=1)
   JG jogspd,0;JP#PADLOOP
 ENDIF
-JP#LOOP,@IN[1]=1
+JP#LOOP
 
-#SWITCHORIGIN 
+#SWITCH 
 ST
 MC
 LM XY
-VS 4000;VA 20000;VD 20000
+VS 4000;VA 5000;VD 5000
 IF (oncam=1) 
   curx=_TPA  
   cury=_TPB
@@ -150,7 +163,7 @@ JP#LOOP
 ST
 MC
 LM XY
-VS 4000;VA 20000;VD 20000;
+VS 4000;VA 5000;VD 5000;
 IF (oncam=1)
   curx=_TPA
   cury=_TPB
@@ -185,7 +198,7 @@ ELSE
   WT 100
   actx=_TPA
   acty=_TPB
-  VS 40000;VA 400000;VD 400000;
+  VS 400;VA 4000;VD 4000;
   ST;MC;LM XY
   LI -actx+deltax,-acty+deltay
   LE;BGS
@@ -215,16 +228,9 @@ ELSE
   DP deltax,deltay
   DE deltax,deltay
 ENDIF
-bit2=@OUT[2]
-bit3=@OUT[3]
-CB 2;CB 3
-loopnum=0
-#WAIT
-JP#WAIT,@IN[6]=0
 JG 0,0
 BG X,Y
 JP#LOOP
-EN
 
 
 #LIMSWI

@@ -27,3 +27,9 @@ https://github.com/RetroPie/RetroPie-Setup
 In the setup go to manage packages and install the ps3 package. Then go to the setup instructions and pair the ps controller. Press the PS button while plugged into USB and then will be done.
 
 
+# Install drivers for i2c for analog out
+https://learn.adafruit.com/mcp4725-12-bit-dac-with-raspberry-pi/overview
+
+
+# install the adafruit library
+
