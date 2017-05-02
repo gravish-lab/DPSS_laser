@@ -11,7 +11,7 @@ joystick = pygame.joystick.Joystick(0)
 joystick.init()
 
 # initialize galil
-g = galil()
+g = gclib.py()
 g.GOpen('192.168.1.40 -d')
 
 # Create a DAC instance.
@@ -43,7 +43,7 @@ while loopQuit == False:
 
 	# test joystick axes
 	outstr = ""
-        axis = [joystick.get_axis(0), joystick.get_axis(1)]
+        axis = [joystick.get_axis(2), joystick.get_axis(3)]
         
         dac1.set_voltage(np.int(4096/2 + (4096/2)*axis[0]))
         dac2.set_voltage(np.int(4096/2 + (4096/2)*axis[1]))
@@ -66,34 +66,38 @@ while loopQuit == False:
 
                         if(event.button == D_UP):
                         # set up move variable
-                                g.GComman('d_up=1')
+                                print('Up=ON')
+                                g.GCommand('d_up=1')
                                 
                         if(event.button == D_DOWN):
-                        # set down move variable
-                                g.GComman('d_down=1')
+                        # set down move variable        
+                                print('Down=ON')
+                                g.GCommand('d_down=1')
                                 
                         if(event.button == D_RIGHT):
                         # set right move variable
-                                g.GComman('d_right=1')
+                                print('right=ON')
+                                g.GCommand('d_right=1')
                                 
                         if(event.button == D_LEFT):
                         # set left move variable
-                                g.GComman('d_left=1')
+                                print('left=ON')
+                                g.GCommand('d_left=1')
 
                         if(event.button == X_ENABLE):
-                                g.GComman('x_enable=1')
+                                g.GCommand('x_enable=1')
                         
                         if(event.button == Y_ENABLE):
-                                g.GComman('y_enable=1')
+                                g.GCommand('y_enable=1')
 
                         if(event.button == SPEED_DEC):
-                                speed_select = int(g.GComman('a3='))
-                                speed_select = speed_select + 0.2
+                                speed_select = float(g.GCommand('a3='))
+                                speed_select = speed_select - 0.2
                                 g.GCommand('a3=' + str(speed_select))
 
                         if(event.button == SPEED_ENC):
-                                speed_select = int(g.GComman('a3='))
-                                speed_select = speed_select - 0.2
+                                speed_select = float(g.GCommand('a3='))
+                                speed_select = speed_select + 0.2
                                 g.GCommand('a3=' + str(speed_select))
 
                         if(event.button == HOME):
@@ -109,25 +113,29 @@ while loopQuit == False:
                 	print("joy button up" + str(event.button))
                         if(event.button == D_UP):
                         # set up move variable
-                                g.GComman('d_up=0')
+                                print('up=OFF')
+                                g.GCommand('d_up=0')
                                 
                         if(event.button == D_DOWN):
                         # set down move variable
-                                g.GComman('d_down=0')
+                                print('down=OFF')
+                                g.GCommand('d_down=0')
                                 
                         if(event.button == D_RIGHT):
                         # set right move variable
-                                g.GComman('d_right=0')
+                                print('right=OFF')
+                                g.GCommand('d_right=0')
                                 
                         if(event.button == D_LEFT):
                         # set left move variable
-                                g.GComman('d_left=0')
+                                print('left=OFF')
+                                g.GCommand('d_left=0')
 
                         if(event.button == X_ENABLE):
-                                g.GComman('x_enable=0')
+                                g.GCommand('x_enable=0')
                         
                         if(event.button == Y_ENABLE):
-                                g.GComman('y_enable=0')
+                                g.GCommand('y_enable=0')
 
 
 

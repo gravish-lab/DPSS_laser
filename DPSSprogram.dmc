@@ -7,7 +7,7 @@ DE 0,0          	;' same for aux encoders
 curx=0          	;' vars for position
 cury=0			
 
-SH			;' Servo here (doesnt do anything here I think)
+SH			
 JG 0,0 			;' Set jog moder and slew speeds
 BG XY 			;' Begin moving on these access (doesnt do anything I think)
 
@@ -15,11 +15,6 @@ DC 20000,20000 	;' Set deceleration and acceleration values
 AC 20000,20000
 
 oncam=1 		;' Set cam as starting coord sys
-
-SB 1 			;' "CAM VIEW" indicator light on
-CB 2 			;' "X-LIMIT" indicator light off
-CB 3 			;' "Y-LIMIT" indicator light off
-
 deltax=10870 		;' This is the x displacement between cam and cut origins
 deltay=0
 
@@ -65,9 +60,6 @@ JGY=((yangle*yangle*yangle*550300)-(yangle*1326))*(y_enable)
 JP#LOOP,((@ABS[xangle]>0.1)|(@ABS[yangle]>0.1)) 		
 ;' If still joysticking keep looping
 
-JP#SETORIG,@IN[6]=0    ;' Check for origin or home buttons
-JP#HOME,@IN[17]=0
-
 #PADLOOP 							
 ;' Loop for keypad nudge movements
 
@@ -88,16 +80,16 @@ IF (a3>=2.54)
 ENDIF
 
 IF (d_up=1)
-  JG 0,jogspd;JP#PADLOOP
+  JGY=jogspd;JP#PADLOOP
 ENDIF
 IF (d_down=1)
-  JG 0,-jogspd;JP#PADLOOP
+  JGY=-jogspd;JP#PADLOOP
 ENDIF
 IF (d_left=1)
-  JG -jogspd,0;JP#PADLOOP
+  JGX=-jogspd;JP#PADLOOP
 ENDIF
 IF (d_right=1)
-  JG jogspd,0;JP#PADLOOP
+  JGX=jogspd;JP#PADLOOP
 ENDIF
 JP#LOOP
 
