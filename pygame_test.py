@@ -3,13 +3,12 @@ from pygame.locals import *
 import os
 from time import sleep
 import RPi.GPIO as GPIO
- 
-#Setup the GPIOs as outputs - only 4 and 17 are available
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(4, GPIO.OUT)
-GPIO.setup(17, GPIO.OUT)
- 
-#Colours
+
+# Geometry
+screen_width = 800
+screen_height = 480
+
+# Colours
 WHITE = (255,255,255)
  
 os.putenv('SDL_FBDEV', '/dev/fb1')
@@ -17,22 +16,51 @@ os.putenv('SDL_MOUSEDRV', 'TSLIB')
 os.putenv('SDL_MOUSEDEV', '/dev/input/touchscreen')
  
 pygame.init()
-pygame.mouse.set_visible(False)
-lcd = pygame.display.set_mode((320, 240))
+pygame.mouse.set_visible(True)
+
+
+lcd = pygame.display.set_mode((screen_width, screen_height))
 lcd.fill((0,0,0))
 pygame.display.update()
  
 font_big = pygame.font.Font(None, 50)
+
+def button(msg,x,y,w,h,ic,ac,action=None):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+    print(click)
+    if x+w > mouse[0] > x and y+h > mouse[1] > y:
+        pygame.draw.rect(lcd, ac,(x,y,w,h))
+
+        if click[0] == 1 and action != None:
+            action()         
+    else:
+        pygame.draw.rect(lcd, ic,(x,y,w,h))
+
+    smallText = pygame.font.SysFont("comicsansms",20)
+    textSurf, textRect = text_objects(msg, smallText)
+    textRect.center = ( (x+(w/2)), (y+(h/2)) )
+    lcd.blit(textSurf, textRect)
+
+class indicator
+
+    def __init__(self,msg,x,y,w,h,ic,ac,action=None):
+        self.x = x
+
+    pygame.draw.rect(lcd, ic,(x,y,w,h))
+
+    smallText = pygame.font.SysFont("comicsansms",20)
+    textSurf, textRect = text_objects(msg, smallText)
+    textRect.center = ( (x+(w/2)), (y+(h/2)) )
+    lcd.blit(textSurf, textRect)
+
+
+indicators = 
  
-touch_buttons = {'17 on':(80,60), '4 on':(240,60), '17 off':(80,180), '4 off':(240,180)}
- 
-for k,v in touch_buttons.items():
-    text_surface = font_big.render('%s'%k, True, WHITE)
-    rect = text_surface.get_rect(center=v)
-    lcd.blit(text_surface, rect)
- 
+
 pygame.display.update()
- 
+
+
 while True:
     # Scan touchscreen events
     for event in pygame.event.get():
@@ -46,12 +74,14 @@ while True:
             x,y = pos
             if y < 120:
                 if x < 160:
-                    GPIO.output(17, False)
+            
                 else:
-                    GPIO.output(4, False)
+            
             else:
                 if x < 160:
-                    GPIO.output(17, True)
+            
                 else:
-                    GPIO.output(4, True)
+
+    pygame.display.update()
+    clock.tick(15)
     sleep(0.1)
