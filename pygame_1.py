@@ -1,3 +1,4 @@
+# noinspection PyInterpreter
 import pygame
 from pygame.locals import *
 import os
