@@ -8,10 +8,10 @@ from time import sleep
 screen_width = 800
 screen_height = 480
 
-top_bar_height = 2/16
+top_bar_height = 2.5/16
 
-small_font_size = 20
-large_font_size = 30
+small_font_size = 30
+large_font_size = 40
 
 # Colours
 bkg_color = (39,40,34)
@@ -27,6 +27,21 @@ arrow_button_color = (98,249,179)
 black = (0,0,0)
 white = (255,255,255)
 red = (255,0,0)
+
+#CONSTANTS FOR MOVE AND JOYSTICK
+D_UP = 4
+D_DOWN = 6
+D_LEFT = 7
+D_RIGHT = 5
+X_ENABLE = 8
+Y_ENABLE = 9
+SPEED_DEC = 10
+SPEED_ENC = 11
+HOME = 12
+SET_ORIGIN = 13
+ORIGIN_SWITCH = 14
+
+
 
 # ras pi touchscreen stuff
 # os.putenv('SDL_FBDEV', '/dev/fb1')
@@ -51,81 +66,142 @@ def text_objects(text, font, font_color):
 class button:
 
     def __init__(self,text,x,y,w,h,bkg_color,txt_color,active_color,
-                 font='courier', fontsize=large_font_size):
-        self.text = str.split(text, '\\')
+                 font='inconsolata', fontsize=large_font_size, strformat="%s",
+                 toggle_action = None):
+
+        self.text = text
         self.x = round(x*screen_width)
         self.y = round(y*screen_height)
         self.w = round(w*screen_width)
         self.h = round(h*screen_height)
         self.fontsize = fontsize
+        self.strformat = strformat
+        self.toggle_action = toggle_action
 
         self.bkg_color = bkg_color
         self.txt_color = txt_color
         self.active_color = active_color
         self.font = pygame.font.SysFont(font, fontsize, bold=True)
 
-        pygame.draw.rect(lcd, self.bkg_color,(self.x,self.y,self.w,self.h))
-        pygame.draw.rect(lcd, bkg_drkr_color, (self.x, self.y, self.w, self.h), 1)
+        self.rect = pygame.draw.rect(lcd, bkg_color,(self.x,self.y,self.w,self.h), 1)
 
-        self.format_text()
+        self.state = False
 
-    def format_text(self):
-        for k, string in enumerate(self.text):
-            textSurf, textRect = text_objects(string, self.font, self.txt_color)
-            textRect.center = (
-            (self.x + (self.w / 2)), (self.y + (self.h / 2) - (len(self.text) - 1) * self.fontsize / 2 + k * self.fontsize))
-            lcd.blit(textSurf, textRect)
+        self.update()
 
     def update(self):
-        self.format_text()
 
+        if self.state == True:
+            bkg = self.active_color
+        else:
+            bkg = self.bkg_color
+
+        pygame.draw.rect(lcd, bkg,(self.x,self.y,self.w,self.h))
+        pygame.draw.rect(lcd, bkg_drkr_color, (self.x, self.y, self.w, self.h), 1)
+
+        display_text = self.strformat % self.text
+        text_lines = str.split(display_text, '\\')
+
+
+        for k, string in enumerate(text_lines):
+            textSurf, textRect = text_objects(string, self.font, self.txt_color)
+            textRect.center = (
+            (self.x + (self.w / 2)), (self.y + (self.h / 2) - (len(text_lines) - 1) * self.fontsize / 2 + k * self.fontsize))
+            lcd.blit(textSurf, textRect)
+
+
+
+    def toggle(self):
+        self.state = True
+        if self.toggle_action != None:
+            self.toggle_action()
+        self.update()
+
+        sleep(0.1)
+
+        self.state = False
+        self.update()
 
 class indicator:
 
     def __init__(self,text,x,y,w,h,bkg_color,txt_color,
-                 font='courier', fontsize=large_font_size):
+                 font='inconsolata', fontsize=large_font_size, strformat="%s"):
         self.text = text
         self.x = round(x*screen_width)
         self.y = round(y*screen_height)
         self.w = round(w*screen_width)
         self.h = round(h*screen_height)
+        self.strformat = strformat
 
         self.bkg_color = bkg_color
         self.txt_color = txt_color
         self.font = pygame.font.SysFont(font, fontsize, bold=True)
 
-        pygame.draw.rect(lcd, self.bkg_color,(self.x,self.y,self.w,self.h))
-        # pygame.draw.rect(lcd, bkg_drkr_color, (self.x, self.y, self.w, self.h),1)
+        self.rect = pygame.draw.rect(lcd, bkg_color,(self.x,self.y,self.w,self.h), 1)
 
-        self.textSurf, self.textRect = text_objects(self.text, self.font, self.txt_color)
+        self.state = False
+
+        self.update()
+
+    def update(self):
+        display_text = self.strformat % self.text
+
+        if self.state == True:
+            bkg = self.txt_color
+            txt = self.bkg_color
+        else:
+            txt = self.txt_color
+            bkg = self.bkg_color
+
+        pygame.draw.rect(lcd, bkg,(self.x,self.y,self.w,self.h))
+
+        self.textSurf, self.textRect = text_objects(display_text, self.font, txt)
         self.textRect.center = ( (self.x+(self.w/2)), (self.y+(self.h/2)) )
         lcd.blit(self.textSurf, self.textRect)
 
-    def update(self):
-        self.textSurf, self.textRect = text_objects(self.text, self.font)
-        lcd.blit(self.textSurf, self.textRect)
-
+    def toggle(self):
+        self.state = not self.state
+        self.update()
 
 
 # bar indicators
-jogspd_indicator = indicator("Jog-spd", 0, 0, 6/30, top_bar_height, bkg_color, orchid_color)
-nudgedisp_indicator = indicator("Nudge-disp", 6/30, 0, 6/30, top_bar_height, bkg_color, orchid_color)
+jogspd_indicator = button("10", 0, 0, 7.5/30, top_bar_height, bkg_color,white, orchid_color,
+                          strformat="V=%s mm/s")
+nudgedisp_indicator = button("11", 7.5/30, 0, 7.5/30, top_bar_height, bkg_color, white, orchid_color,
+                             strformat="D=%s mm")
 
-x_indicator = indicator("X-pos", 12/30, 0, 6/30, top_bar_height, bkg_color, blu_color)
-y_indicator = indicator("Y-pos", 18/30, 0, 6/30, top_bar_height, bkg_color, blu_color)
+def nudge_toggle_action():
+    nudge_state = nudgedisp_indicator.state
+    jogspd_indicator.state= not nudge_state
+    jogspd_indicator.update()
 
-oncam_indicator = indicator("Cam", 24/30, 0, 3/30, top_bar_height, bkg_color, grn_color)
-laser_indicator = indicator("LZR", 27/30, 0, 3/30, top_bar_height, bkg_color, grn_color)
+def jog_toggle_action():
+    jog_state = jogspd_indicator.state
+    nudgedisp_indicator.state = not jog_state
+    nudgedisp_indicator.update()
+
+# nudgedisp_indicator.toggle_action = nudge_toggle_action()
+# jogspd_indicator.toggle_action = jog_toggle_action()
+
+
+x_indicator = indicator("X-pos", 15/30, 0, 7.5/30, top_bar_height, bkg_color, blu_color, strformat="x=%s mm")
+y_indicator = indicator("Y-pos", 22.5/30, 0, 7.5/30, top_bar_height, bkg_color, blu_color, strformat="y=%s mm")
+
+oncam_indicator = indicator("NUDGE?", 15.5/30, top_bar_height, 3/30, 1/16, bkg_color, grn_color, fontsize=small_font_size)
+laser_indicator = indicator("LAZR", 19.5/30, top_bar_height, 3/30, 1/16, bkg_color, grn_color, fontsize=small_font_size)
+shutter_indicator = indicator("SHTR", 23.5/30, top_bar_height, 3/30, 1/16, bkg_color, grn_color, fontsize=small_font_size)
+nudge_indicator = indicator("CAM", 26.5/30, top_bar_height, 3/30, 1/16, bkg_color, grn_color, fontsize=small_font_size)
+
 
 # arrow keys
-up_button = button("up", 6/30, 3/16, 5/30, 3.8/16, arrow_button_color, (0,0,0),white)
-down_button = button("dwn", 6/30, 11/16, 5/30, 3.8/16, arrow_button_color, (0,0,0),white)
-left_button = button("lft", 3/30, 7/16, 5/30, 3.8/16, arrow_button_color, (0,0,0),white)
-right_button = button("rgh", 9/30, 7/16, 5/30, 3.8/16, arrow_button_color, (0,0,0),white)
+up_button = button("up", 6/30, 3/16, 5/30, 3.8/16, arrow_button_color, white,white)
+down_button = button("dwn", 6/30, 11/16, 5/30, 3.8/16, arrow_button_color, white,white)
+left_button = button("lft", 3/30, 7/16, 5/30, 3.8/16, arrow_button_color, white,white)
+right_button = button("rgh", 9/30, 7/16, 5/30, 3.8/16, arrow_button_color, white,white)
 
 # speed buttons
-speed_up_button = button("inc", 0/30, 1.1*top_bar_height, 5/30, 4/16, (100,100,100), (0,0,0),white)
-speed_down_button = button("dec", 0/30, (16-1.1*4)/16, 5/30, 4/16, (100,100,100), (0,0,0),white)
+speed_up_button = button("+V", 0/30, 1.1*top_bar_height, 5/30, 4/16, (100,100,100), white,white)
+speed_down_button = button("-V", 0/30, (16-1.1*4)/16, 5/30, 4/16, (100,100,100), white,white)
 
 # right side buttons
 x_enable_button = button("x_enable", 15/30, 1.5*top_bar_height, 7/30, 3.5/16, (100,100,100), purp_color,white)
@@ -135,16 +211,101 @@ home_button = button("Move-home", 22.5/30, 1.5*top_bar_height+4/16, 7/30, 3.5/16
 switch_orig_button = button("Origin\\switch", 15/30, 1.5*top_bar_height+8/16, 7/30, 3.5/16, (100,100,100), purp_color,white)
 set_nudge_button = button("Set nudge\\distance", 22.5/30, 1.5*top_bar_height+8/16, 7/30, 3.5/16, (100,100,100), purp_color,white)
 
-pygame.display.update()
+
+move_buttons = [up_button, left_button, right_button, down_button]
+
+button_checks = [x_enable_button, y_enable_button,
+                 set_orig_button, home_button,
+                 switch_orig_button, set_nudge_button,
+                 speed_down_button, speed_up_button,
+                 jogspd_indicator, nudgedisp_indicator]
+
+#
+# def jog(direction):
+#     if direction == D_UP:
+#
+# def change_speed(up_down):
+#
+# def x_enable():
+#
+# def y_enable():
+#
+# def switch_origin():
+#
+# def home():
+#
+# def set_home():
+#
+# def set_nudge_disp():
+#
+
+
+clock = pygame.time.Clock()
 
 
 while True:
     # Scan touchscreen events
     for event in pygame.event.get():
         if(event.type is MOUSEBUTTONDOWN):
-            print(event.pos)
+            pos = event.pos
+            print(pos)
+
+            for button in move_buttons:
+                if button.rect.collidepoint(pos):
+
+                    if button is up_button:
+                        button.toggle()
+
+                        break
+
+                    if button is down_button:
+                        break
+
+                    if button is left_button:
+                        break
+
+                    if button is right_button:
+                        break
+
+
+
+            for button in button_checks:
+                if button.rect.collidepoint(pos):
+                    button.toggle()
+
+                    # deal with selection of nudge or jog
+                    if button is nudgedisp_indicator:
+                        print('nudge disp')
+                        nudge_state = nudgedisp_indicator.state
+                        jogspd_indicator.state = not nudge_state
+                        jogspd_indicator.update()
+                        break
+
+                    if button is jogspd_indicator:
+                        print('jog disp')
+                        jog_state = jogspd_indicator.state
+                        nudgedisp_indicator.state = not jog_state
+                        nudgedisp_indicator.update()
+                        break
+
+
+                    # Home
+
+                    # Set origin
+
+                    # X-enable
+
+                    # Y-enable
+
+                    # Switch origin
+
+                    # Change speed
+
+                    # Set nudge displacement
+
+
 
     # print(pygame.mouse.get_pos())
 
     pygame.display.update()
-    sleep(0.1)
+    # clock.tick(1)
