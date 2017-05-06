@@ -1,30 +1,16 @@
+
 import pygame
 from pygame.locals import *
 from time import sleep
 
+import pygame_textinput
+
+from debug import *
+from flags import *
+
 from buttons import *
 from styling import *
 from galil_funcs import *
-
-DEBUG = 1
-
-#CONSTANTS FOR MOVE AND JOYSTICK
-D_UP = 4
-D_DOWN = 6
-D_LEFT = 7
-D_RIGHT = 5
-X_ENABLE = 8
-Y_ENABLE = 9
-SPEED_DEC = 10
-SPEED_ENC = 11
-HOME = 12
-SET_ORIGIN = 13
-ORIGIN_SWITCH = 14
-NUDGE_SELECT = -2
-JOG_SELECT = -1
-
-joy_buttons = [D_UP, D_DOWN, D_LEFT, D_RIGHT, X_ENABLE, Y_ENABLE,
-               SPEED_DEC, SPEED_ENC, HOME, SET_ORIGIN, ORIGIN_SWITCH]
 
 # ras pi touchscreen stuff
 # os.putenv('SDL_FBDEV', '/dev/fb1')
@@ -40,10 +26,12 @@ lcd = pygame.display.set_mode((screen_width, screen_height))
 lcd.fill(bkg_color)
 pygame.display.update()
 
+jog_speed = jog_speeds()
+
 # bar indicators
-jogspd_indicator = oneshot_button("10", -1,  0, 0, 7.5/30, top_bar_height, bkg_color,white, orchid_color, lcd,
+jogspd_indicator = oneshot_button(str(jog_speed.speed), -1,  0, 0, 7.5/30, top_bar_height, bkg_color,white, orchid_color, lcd,
                           strformat="V=%s mm/s")
-nudgedisp_indicator = oneshot_button("11", -2, 7.5/30, 0, 7.5/30, top_bar_height, bkg_color, white, orchid_color, lcd,
+nudgedisp_indicator = oneshot_button("0", -2, 7.5/30, 0, 7.5/30, top_bar_height, bkg_color, white, orchid_color, lcd,
                              strformat="D=%s mm")
 
 jogspd_indicator.state = True
@@ -73,8 +61,10 @@ y_enable_button = oneshot_button("y_enable", Y_ENABLE, 22.5/30, 1.5*top_bar_heig
 set_orig_button = oneshot_button("Set-home", SET_ORIGIN, 15/30, 1.5*top_bar_height+4/16, 7/30, 3.5/16, (100,100,100), purp_color,white, lcd)
 home_button = oneshot_button("Move-home", HOME, 22.5/30, 1.5*top_bar_height+4/16, 7/30, 3.5/16, (100,100,100), purp_color,white, lcd)
 switch_orig_button = oneshot_button("Origin\\switch", ORIGIN_SWITCH, 15/30, 1.5*top_bar_height+8/16, 7/30, 3.5/16, (100,100,100), purp_color,white, lcd)
-set_nudge_button = oneshot_button("Set nudge\\distance", 0, 22.5/30, 1.5*top_bar_height+8/16, 7/30, 3.5/16, (100,100,100), purp_color,white, lcd)
+set_nudge_button = oneshot_button("Set nudge\\distance", NUDGE_DISP, 22.5/30, 1.5*top_bar_height+8/16, 7/30, 3.5/16, (100,100,100), purp_color,white, lcd)
 
+joy_buttons = [D_UP, D_DOWN, D_LEFT, D_RIGHT, X_ENABLE, Y_ENABLE,
+               SPEED_DEC, SPEED_ENC, HOME, SET_ORIGIN, ORIGIN_SWITCH]
 
 buttons = [x_enable_button, y_enable_button,
                  set_orig_button, home_button,
@@ -84,19 +74,58 @@ buttons = [x_enable_button, y_enable_button,
                  up_button, left_button, right_button,
                  down_button]
 
+indicators = [oncam_indicator, laser_indicator, shutter_indicator, nudge_indicator, x_indicator, y_indicator]
+
+off_buttons = [set_orig_button, home_button,
+                 switch_orig_button, set_nudge_button,
+                 speed_down_button, speed_up_button]
+
+def restore():
+    lcd.fill(bkg_color)
+    pygame.display.update()
+    [butt.update() for butt in buttons]
+    [ind.update() for ind in indicators]
+
 def wait():
     while True:
+        update_xy()
         for event in pygame.event.get():
             if (event.type == MOUSEBUTTONUP) or (event.type == JOYBUTTONUP):
                 return event
 
 clock = pygame.time.Clock()
+textinput = pygame_textinput.TextInput()
+
+def read_text():
+    lcd.fill((225, 225, 225))
+    while True:
+        events = pygame.event.get()
+        for event in events:
+            print(event)
+            if event.type is MOUSEBUTTONDOWN:
+                print(textinput.get_text())
+                restore()
+                return
+
+        if textinput.update(events):
+            print(textinput.get_text())
+
+        lcd.blit(textinput.get_surface(), (100, screen_height/2))
+        pygame.display.update()
+        # clock.tick(30)
+
+def update_xy():
+    (x, y) = get_curr_position()
+    x_indicator.text = x
+    x_indicator.update()
+    y_indicator.text = y
+    y_indicator.update()
+    clock.tick(100)
 
 while True:
     flag = 0
     curr_button = 0
-
-    print(jog_speeds)
+    # [off.off() for off in off_buttons]
 
     # Scan touchscreen events
     for event in pygame.event.get():
@@ -104,16 +133,20 @@ while True:
         if event.type is MOUSEBUTTONDOWN:
             pos = event.pos
             print(pos)
-            pygame.event.clear()
+            # pygame.event.clear()
 
             for button in buttons:
                 if button.rect.collidepoint(pos):
                     flag = button.flag
-                    curr_button = button
+
 
         elif event.type is pygame.JOYBUTTONDOWN:
             flag = event.button
-            event.clear()
+            curr_button = 0
+
+
+    pygame.display.update()
+
 
     if DEBUG == 1 and flag != 0:
         print('flag = %d' % flag)
@@ -122,106 +155,151 @@ while True:
     # Jogging
     if flag == D_UP:
         if jogspd_indicator.state == True:
-            curr_button.on()
+            up_button.on()
             jog(D_UP)
             wait()
             jog_stop()
-            curr_button.off()
+            up_button.off()
             print('stop %d' % flag)
         else:
-            # g.GCommand('')
+            up_button.on()
+            nudge(D_UP, float(nudgedisp_indicator.text), float(jogspd_indicator.text))
+            wait()
+            jog_stop()
+            up_button.off()
+            print('stop %d' % flag)
             pass
+
 
     elif flag == D_DOWN:
         if jogspd_indicator.state == True:
-            curr_button.on()
+            down_button.on()
             jog(D_DOWN)
             wait()
             jog_stop()
-            curr_button.off()
+            down_button.off()
             print('stop %d' % flag)
         else:
-            pass
+            down_button.on()
+            nudge(D_DOWN, float(nudgedisp_indicator.text), float(jogspd_indicator.text))
+            wait()
+            jog_stop()
+            down_button.off()
+            print('stop %d' % flag)
 
     elif flag == D_LEFT:
         if jogspd_indicator.state == True:
-            curr_button.on()
+            left_button.on()
             jog(D_LEFT)
             wait()
             jog_stop()
-            curr_button.off()
+            left_button.off()
             print('stop %d' % flag)
         else:
-            pass
+            left_button.on()
+            nudge(D_LEFT, float(nudgedisp_indicator.text), float(jogspd_indicator.text))
+            wait()
+            jog_stop()
+            left_button.off()
+            print('stop %d' % flag)
 
     elif flag == D_RIGHT:
         if jogspd_indicator.state == True:
-            curr_button.on()
+            right_button.on()
             jog(D_RIGHT)
             wait()
             jog_stop()
-            curr_button.off()
+            right_button.off()
             print('stop %d' % flag)
         else:
-            pass
-
-    # Home
-    elif flag == HOME:
-        curr_button.on()
-        sleep(0.5)
-        curr_button.off()
-
-    # Set origin
-    elif flag == ORIGIN_SWITCH:
-        curr_button.on()
-        sleep(0.5)
-        curr_button.off()
+            right_button.on()
+            nudge(D_RIGHT, float(nudgedisp_indicator.text), float(jogspd_indicator.text))
+            wait()
+            jog_stop()
+            right_button.off()
+            print('stop %d' % flag)
 
     # X-enable
     elif flag == X_ENABLE:
-        curr_button.toggle()
+        wait()
+        sleep(.1)
+        x_enable_button.toggle()
 
-    # Y-enable
+        # Y-enable
     elif flag == Y_ENABLE:
-        curr_button.toggle()
+        wait()
+        sleep(.1)
+        y_enable_button.toggle()
 
-    # Switch origin
+    # Home
+    elif flag == HOME:
+        home_button.on()
+        wait()
+        sleep(.1)
+        home_button.off()
+
+    # switch origin
+    elif flag == ORIGIN_SWITCH:
+        switch_orig_button.on()
+        wait()
+        sleep(.1)
+        switch_orig_button.off()
+
+    # decrease speed
     elif flag == SPEED_DEC:
-        curr_button.on()
-        sleep(0.5)
-        curr_button.off()
+        jog_speed.decrement()
+        speed_set(jog_speed.speed)
+        jogspd_indicator.text = str(jog_speed.speed)
+        jogspd_indicator.update()
+
+        speed_down_button.on()
+        wait()
+        sleep(.1)
+        speed_down_button.off()
 
     # Change speed
     elif flag == SPEED_ENC:
-        curr_button.on()
-        sleep(0.5)
-        curr_button.off()
+        jog_speed.increment()
+        speed_set(jog_speed.speed)
+        jogspd_indicator.text = str(jog_speed.speed)
+        jogspd_indicator.update()
+
+        speed_up_button.on()
+        wait()
+        sleep(.1)
+        speed_up_button.off()
 
     # Set home
     elif flag == SET_ORIGIN:
-        curr_button.on()
-        sleep(0.5)
-        curr_button.off()
+        set_orig_button.on()
+        wait()
+        sleep(.1)
+        set_orig_button.off()
 
     # nudge and jog
     elif flag == NUDGE_SELECT:
-        curr_button.on()
+        nudgedisp_indicator.on()
         print('nudge disp')
         nudge_state = nudgedisp_indicator.state
         jogspd_indicator.state = not nudge_state
         jogspd_indicator.update()
 
     elif flag == JOG_SELECT:
-        curr_button.on()
+        jogspd_indicator.on()
         print('jog disp')
         jog_state = jogspd_indicator.state
         nudgedisp_indicator.state = not jog_state
         nudgedisp_indicator.update()
 
+    elif flag == NUDGE_DISP:
+            # set the nudge
+            nudge_dist = read_text()
+            nudgedisp_indicator.text = nudge_dist
+            print('out')
 
-    # elif button is set_nudge_button:
-    #         # set the nudge
-    #         break
 
-    pygame.display.update()
-    # clock.tick(1)
+    update_xy()
+
+
+
+    # clock.tick(60)

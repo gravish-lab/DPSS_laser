@@ -6,7 +6,8 @@ def text_objects(text, font, font_color):
     textSurface = font.render(text, True, font_color)
     return textSurface, textSurface.get_rect()
 
-
+from debug import *
+from flags import *
 
 
 class button:
@@ -58,39 +59,37 @@ class button:
             (self.x + (self.w / 2)), (self.y + (self.h / 2) - (len(text_lines) - 1) * self.fontsize / 2 + k * self.fontsize))
             self.lcd.blit(textSurf, textRect)
 
+        pygame.display.update(self.rect)
 
 class oneshot_button(button):
     def on(self):
         self.state = True
         self.update()
-        pygame.display.update()
 
     def off(self):
         self.state = False
         self.update()
-        pygame.display.update()
 
     def toggle(self):
         self.state = not self.state
         self.update()
-        pygame.display.update()
 
 
 class holdable_button(button):
     def on(self):
         self.state = True
         self.update()
-        pygame.display.update()
+
 
     def off(self):
         self.state = False
         self.update()
-        pygame.display.update()
+
 
     def toggle(self):
         self.state = not self.state
         self.update()
-        pygame.display.update()
+
 
 
 class indicator:
@@ -131,4 +130,6 @@ class indicator:
 
         self.textSurf, self.textRect = text_objects(display_text, self.font, txt)
         self.textRect.center = ( (self.x+(self.w/2)), (self.y+(self.h/2)) )
+        self.lcd.blit(self.textSurf, self.textRect)
+        pygame.display.update(self.rect)
 
