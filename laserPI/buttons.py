@@ -70,6 +70,11 @@ class oneshot_button(button):
         self.update()
         pygame.display.update()
 
+    def toggle(self):
+        self.state = not self.state
+        self.update()
+        pygame.display.update()
+
 
 class holdable_button(button):
     def on(self):
@@ -79,6 +84,11 @@ class holdable_button(button):
 
     def off(self):
         self.state = False
+        self.update()
+        pygame.display.update()
+
+    def toggle(self):
+        self.state = not self.state
         self.update()
         pygame.display.update()
 
