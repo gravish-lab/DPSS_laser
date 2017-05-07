@@ -5,7 +5,7 @@ screen_height = 480
 
 top_bar_height = 2.5/16
 
-small_font_size = 30
+small_font_size = 25
 large_font_size = 40
 
 # Colors

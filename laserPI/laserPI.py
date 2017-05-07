@@ -12,6 +12,8 @@ from buttons import *
 from styling import *
 from galil_funcs import *
 
+import time
+
 # ras pi touchscreen stuff
 # os.putenv('SDL_FBDEV', '/dev/fb1')
 # os.putenv('SDL_MOUSEDRV', 'TSLIB')
@@ -28,6 +30,13 @@ pygame.display.update()
 
 jog_speed = jog_speeds()
 
+
+# initialize joystick
+pygame.init()
+pygame.joystick.init()
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
+
 # bar indicators
 jogspd_indicator = oneshot_button(str(jog_speed.speed), -1,  0, 0, 7.5/30, top_bar_height, bkg_color,white, orchid_color, lcd,
                           strformat="V=%s mm/s")
@@ -37,31 +46,31 @@ nudgedisp_indicator = oneshot_button("0", -2, 7.5/30, 0, 7.5/30, top_bar_height,
 jogspd_indicator.state = True
 jogspd_indicator.update()
 
-x_indicator = indicator("X-pos", 15/30, 0, 7.5/30, top_bar_height, bkg_color, blu_color, lcd, strformat="x=%s mm")
+x_indicator = indicator("X-pos", 15.1/30, 0, 7.5/30, top_bar_height, bkg_color, blu_color, lcd, strformat="x=%s mm")
 y_indicator = indicator("Y-pos", 22.5/30, 0, 7.5/30, top_bar_height, bkg_color, blu_color, lcd, strformat="y=%s mm")
 
-oncam_indicator = indicator("NUDGE?", 15.5/30, top_bar_height, 3/30, 1/16, bkg_color, grn_color, lcd, fontsize=small_font_size)
-laser_indicator = indicator("LAZR", 19.5/30, top_bar_height, 3/30, 1/16, bkg_color, grn_color, lcd, fontsize=small_font_size)
-shutter_indicator = indicator("SHTR", 23.5/30, top_bar_height, 3/30, 1/16, bkg_color, grn_color, lcd, fontsize=small_font_size)
-nudge_indicator = indicator("CAM", 26.5/30, top_bar_height, 3/30, 1/16, bkg_color, grn_color, lcd, fontsize=small_font_size)
+nudge_indicator = indicator("NUDGE", 15.5/30, top_bar_height*1.3, 3/30, 1/16, bkg_color, grn_color, lcd, fontsize=small_font_size)
+laser_indicator = indicator("LAZER ON", 19.5/30, top_bar_height*1.3, 3/30, 1/16, bkg_color, grn_color, lcd, fontsize=small_font_size)
+shutter_indicator = indicator("SHUTTER", 23.5/30, top_bar_height*1.3, 3/30, 1/16, bkg_color, grn_color, lcd, fontsize=small_font_size)
+oncam_indicator = indicator("ON CAM", 26.5/30, top_bar_height*1.3, 3/30, 1/16, bkg_color, grn_color, lcd, fontsize=small_font_size)
 
 # arrow keys
-up_button = holdable_button("up", D_UP,  6/30, 3/16, 5/30, 3.8/16, arrow_button_color, white,white, lcd)
-down_button = holdable_button("dwn", D_DOWN, 6/30, 11/16, 5/30, 3.8/16, arrow_button_color, white,white, lcd)
-left_button = holdable_button("lft", D_LEFT, 3/30, 7/16, 5/30, 3.8/16, arrow_button_color, white,white, lcd)
-right_button = holdable_button("rgh", D_RIGHT, 9/30, 7/16, 5/30, 3.8/16, arrow_button_color, white,white, lcd)
+up_button = holdable_button("up", D_UP,  6.01/30, 3.01/16, 5.01/30, 3.8/16, arrow_button_color, white,white, lcd)
+down_button = holdable_button("dwn", D_DOWN, 6.01/30, 11.01/16, 5.01/30, 3.8/16, arrow_button_color, white,white, lcd)
+left_button = holdable_button("lft", D_LEFT, 3.01/30, 7.01/16, 5.01/30, 3.8/16, arrow_button_color, white,white, lcd)
+right_button = holdable_button("rgh", D_RIGHT, 9.01/30, 7.01/16, 5.01/30, 3.8/16, arrow_button_color, white,white, lcd)
 
 # speed buttons
-speed_up_button = oneshot_button("+V", SPEED_ENC, 0/30, 1.1*top_bar_height, 5/30, 4/16, (100,100,100), white,white, lcd)
-speed_down_button = oneshot_button("-V", SPEED_DEC, 0/30, (16-1.1*4)/16, 5/30, 4/16, (100,100,100), white,white, lcd)
+speed_up_button = oneshot_button("+V", SPEED_ENC, 0/30, 1.1*top_bar_height, 5.01/30, 4.01/16, (100,100,100), white,white, lcd)
+speed_down_button = oneshot_button("-V", SPEED_DEC, 0/30, (16-1.1*4)/16, 5.01/30, 4.01/16, (100,100,100), white,white, lcd)
 
 # right side buttons
-x_enable_button = oneshot_button("x_enable", X_ENABLE, 15/30, 1.5*top_bar_height, 7/30, 3.5/16, (100,100,100), purp_color,white, lcd)
-y_enable_button = oneshot_button("y_enable", Y_ENABLE, 22.5/30, 1.5*top_bar_height, 7/30, 3.5/16, (100,100,100), purp_color,white, lcd)
-set_orig_button = oneshot_button("Set-home", SET_ORIGIN, 15/30, 1.5*top_bar_height+4/16, 7/30, 3.5/16, (100,100,100), purp_color,white, lcd)
-home_button = oneshot_button("Move-home", HOME, 22.5/30, 1.5*top_bar_height+4/16, 7/30, 3.5/16, (100,100,100), purp_color,white, lcd)
-switch_orig_button = oneshot_button("Origin\\switch", ORIGIN_SWITCH, 15/30, 1.5*top_bar_height+8/16, 7/30, 3.5/16, (100,100,100), purp_color,white, lcd)
-set_nudge_button = oneshot_button("Set nudge\\distance", NUDGE_DISP, 22.5/30, 1.5*top_bar_height+8/16, 7/30, 3.5/16, (100,100,100), purp_color,white, lcd)
+x_enable_button = oneshot_button("x_enable", X_ENABLE, 15.01/30, 1.5*top_bar_height, 7.01/30, 3.5/16, (100,100,100), purp_color,white, lcd)
+y_enable_button = oneshot_button("y_enable", Y_ENABLE, 22.501/30, 1.5*top_bar_height, 7.01/30, 3.5/16, (100,100,100), purp_color,white, lcd)
+set_orig_button = oneshot_button("Set-home", SET_ORIGIN, 15.01/30, 1.5*top_bar_height+4.01/16, 7.01/30, 3.5/16, (100,100,100), purp_color,white, lcd)
+home_button = oneshot_button("Move-home", HOME, 22.501/30, 1.5*top_bar_height+4.01/16, 7.01/30, 3.501/16, (100,100,100), purp_color,white, lcd)
+switch_orig_button = oneshot_button("Origin\\switch", ORIGIN_SWITCH, 15.01/30, 1.5*top_bar_height+8.01/16, 7.01/30, 3.501/16, (100,100,100), purp_color,white, lcd)
+set_nudge_button = oneshot_button("Set nudge\\distance", NUDGE_DISP, 22.501/30, 1.5*top_bar_height+8.01/16, 7.01/30, 3.501/16, (100,100,100), purp_color,white, lcd)
 
 joy_buttons = [D_UP, D_DOWN, D_LEFT, D_RIGHT, X_ENABLE, Y_ENABLE,
                SPEED_DEC, SPEED_ENC, HOME, SET_ORIGIN, ORIGIN_SWITCH]
@@ -80,6 +89,32 @@ off_buttons = [set_orig_button, home_button,
                  switch_orig_button, set_nudge_button,
                  speed_down_button, speed_up_button]
 
+
+class update_xy():
+    def __init__(self):
+        self.last_time= 0
+        (x, y) = get_curr_position()
+        self.x = x
+        self.y = y
+        self.delay = .1
+        
+    def update(self):
+        curr_time = time.time()
+
+        if curr_time - self.delay > self.last_time:
+            
+            (x, y) = get_curr_position()
+            self.x = x
+            self.y = y
+            self.last_time = curr_time
+        
+        x_indicator.text = self.x
+        x_indicator.update()
+        y_indicator.text = self.y
+        y_indicator.update()
+        
+updatexy = update_xy()
+
 def restore():
     lcd.fill(bkg_color)
     pygame.display.update()
@@ -88,13 +123,13 @@ def restore():
 
 def wait():
     while True:
-        update_xy()
+        updatexy.update()
         for event in pygame.event.get():
             if (event.type == MOUSEBUTTONUP) or (event.type == JOYBUTTONUP):
                 return event
 
 clock = pygame.time.Clock()
-textinput = pygame_textinput.TextInput()
+textinput = pygame_textinput.TextInput(font_size = 80, font_family = "inconsolata")
 
 def read_text():
     lcd.fill((225, 225, 225))
@@ -108,19 +143,11 @@ def read_text():
                 return
 
         if textinput.update(events):
-            print(textinput.get_text())
+            return textinput.get_text()
 
         lcd.blit(textinput.get_surface(), (100, screen_height/2))
         pygame.display.update()
         # clock.tick(30)
-
-def update_xy():
-    (x, y) = get_curr_position()
-    x_indicator.text = x
-    x_indicator.update()
-    y_indicator.text = y
-    y_indicator.update()
-    clock.tick(100)
 
 while True:
     flag = 0
@@ -292,13 +319,22 @@ while True:
         nudgedisp_indicator.update()
 
     elif flag == NUDGE_DISP:
-            # set the nudge
+            set_nudge_button.on()
+            wait()
+            sleep(.1)
             nudge_dist = read_text()
-            nudgedisp_indicator.text = nudge_dist
+            try:
+                nudge_dist = float(nudge_dist)
+            except:
+                nudge_dist = 0
+                
+            nudgedisp_indicator.text = str(nudge_dist)
+            restore()
+            set_nudge_button.on()
             print('out')
 
 
-    update_xy()
+    updatexy.update()
 
 
 
