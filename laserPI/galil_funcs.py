@@ -1,16 +1,21 @@
 
-# import gclib
-#
-# g = gclib.py()
-#
-# def connect():
-#     g.GOpen('192.168.1.40 -d')
+import gclib
+#def connect():
+
 import random
 
 from debug import *
 from flags import *
 
-GALIL_DEBUG = 0
+import time
+
+import numpy as np
+
+GALIL_DEBUG = 1
+
+if GALIL_DEBUG:
+    g = gclib.py()
+    g.GOpen('192.168.1.40 -d')
 
 speed_calib = 10000 # mm/s to .1 microns/s
 
@@ -31,17 +36,42 @@ class jog_speeds():
         self.curr_index = max(self.curr_index-1, 0)
         self.speed = self.speeds[self.curr_index]
 
+class nudge_dists():
+    def __init__(self):
+
+        self.curr_index = 0
+        self.dists = [0.1,0.2,0.3,0.4,0.5]
+        self.dists.extend(list(np.linspace(1,100,100)))
+        self.dist = self.dists[self.curr_index]
+
+    def increment(self):
+        self.curr_index = min(self.curr_index+1, len(self.dists)-1)
+        self.dist = self.dists[self.curr_index]
+
+    def decrement(self):
+        self.curr_index = max(self.curr_index-1, 0)
+        self.dist = self.dists[self.curr_index]
+
+
+
+def connect_and_reset():
+    g.GOpen('192.168.1.40 -d')
+    g.GCommand('RS')
+    time.sleep(2)
+    g.GProgramDownloadFile('/home/pi/DPSS_laser/DPSSprogram.dmc')
+    g.GCommand('XQ#AUTO')
+    
 
 def jog(direction):
     if direction == D_UP:
         if GALIL_DEBUG:
-            g.GCommand('d_up=1')
+            g.GCommand('d_down=1')
         if DEBUG == 1:
             print('up_on')
         return
     if direction == D_DOWN:
         if GALIL_DEBUG:
-            g.GCommand('d_down=1')
+            g.GCommand('d_up=1')
         if DEBUG == 1:
             print('down_on')
         return
@@ -58,6 +88,9 @@ def jog(direction):
             print('right_on')
         return
 
+def send_stop():
+    g.GCommand('ST')
+    g.GCommand('SH;JG 0,0;BG XY;XQ#LOOP')        
 
 def jog_stop():
     if GALIL_DEBUG:
@@ -67,33 +100,57 @@ def jog_stop():
         g.GCommand('d_down=0')
     return
 
-def nudge(direction, nudge_disp, nudge_sp):
-    nudge_sp = nudge_sp*speed_calib
+def nudge(direction):
     if direction == D_UP:
         if GALIL_DEBUG:
-            g.GCommand('SP %d; PRY +%d;BG' % (nudge_sp, nudge_disp))
+            g.GCommand('ndg_up=1')
         if DEBUG == 1:
-            print('up_nudge: SP %d; PRY +%d;BG' % (nudge_sp, nudge_disp))
+            print('up_on')
         return
     if direction == D_DOWN:
         if GALIL_DEBUG:
-            g.GCommand('SP %d; PRY -%d;BG' % (nudge_sp, nudge_disp))
+            g.GCommand('ndg_dwn=1')
         if DEBUG == 1:
-            print('down_nudge: SP %d; PRY -%d;BG' % (nudge_sp, nudge_disp))
+            print('down_on')
         return
     if direction == D_LEFT:
         if GALIL_DEBUG:
-            g.GCommand('SP %d; PRX +%d;BG' % (nudge_sp, nudge_disp))
+            g.GCommand('ndg_lft=1')
         if DEBUG == 1:
-            print('left_nudge: SP %d; PRX +%d;BG' % (nudge_sp, nudge_disp))
+            print('left_on')
         return
     if direction == D_RIGHT:
         if GALIL_DEBUG:
-            g.GCommand('SP %d; PRX -%d;BG' % (nudge_sp, nudge_disp))
+            g.GCommand('ndg_rt=1')
         if DEBUG == 1:
-            print('right_nudgeSP %d; PRX -%d;BG' % (nudge_sp, nudge_disp))
+            print('right_on')
         return
-
+##    nudge_sp = float(nudge_sp*speed_calib)
+##    if direction == D_UP:
+##        if GALIL_DEBUG:
+##            g.GCommand('SP %d,%d; PRY +%d;BG' % (nudge_sp, nudge_disp))
+##        if DEBUG == 1:
+##            print('up_nudge: SP %d,%d; PRY +%d;BG' % (nudge_sp, nudge_disp))
+##        return
+##    if direction == D_DOWN:
+##        if GALIL_DEBUG:
+##            g.GCommand('SP %d,%d; PRY -%d;BG' % (nudge_sp, nudge_disp))
+##        if DEBUG == 1:
+##            print('down_nudge: SP %d,%d; PRY -%d;BG' % (nudge_sp, nudge_disp))
+##        return
+##    if direction == D_LEFT:
+##        if GALIL_DEBUG:
+##            g.GCommand('SP %d,%d; PRX +%d;BG' % (nudge_sp, nudge_disp))
+##        if DEBUG == 1:
+##            print('left_nudge: SP %d,%d; PRX +%d;BG' % (nudge_sp, nudge_disp))
+##        return
+##    if direction == D_RIGHT:
+##        if GALIL_DEBUG:
+##            g.GCommand('SP %d,%d; PRX -%d;BG' % (nudge_sp, nudge_disp))
+##        if DEBUG == 1:
+##            print('right_nudgeSP %d,%d; PRX -%d;BG' % (nudge_sp, nudge_disp))
+##        return
+##
 
 def x_enable(up_down):
     if GALIL_DEBUG:
@@ -122,15 +179,26 @@ def set_home():
 
 def speed_set(speed):
     if GALIL_DEBUG:
-        g.GCommand('jogspeed=%d' % speed*speed_calib)
+        g.GCommand('jogspd=%d' % float(speed*speed_calib))
 
+def nudge_set(dist):
+    if GALIL_DEBUG:
+        g.GCommand('ndg_dst=%d' % float(dist*speed_calib))
+
+def get_vals():
+    if GALIL_DEBUG:
+        vals = g.GCommand('MG oncam, _TPA, _TPB, homex, homey')
+    else:
+        vals = '1 2 3 4 5'
+        
+    return vals
 
 def get_curr_position():
     if GALIL_DEBUG:
-        homex = g.GCommand('homex=')
-        homey = g.GCommand('homey=')
-        currx = g.GCommand('currx=')
-        curry = g.GCommand('curry=')
+        homex = float(g.GCommand('homex='))
+        homey = float(g.GCommand('homey='))
+        currx = float(g.GCommand('currx='))
+        curry = float(g.GCommand('curry='))
 
     else:
         homex = random.randint(0,10000)
@@ -138,7 +206,7 @@ def get_curr_position():
         currx = random.randint(0,10000)
         curry = random.randint(0,10000)
 
-    return currx - homex, curry - homey
+    return (currx - homex, curry - homey)
 
 #
 # if event.button == SPEED_DEC:
