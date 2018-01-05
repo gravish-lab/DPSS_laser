@@ -1,0 +1,3 @@
+
+- put in an absolute positioning reference
+- put a home button on screen

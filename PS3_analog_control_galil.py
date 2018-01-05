@@ -12,7 +12,7 @@ joystick.init()
 
 # initialize galil
 g = gclib.py()
-#g.GOpen('192.168.1.40 -d')
+g.GOpen('192.168.1.40 -d')
 
 # Create a DAC instance.
 dac1 = Adafruit_MCP4725.MCP4725(address=0x62)
@@ -41,7 +41,7 @@ max_jogspeed = 10000
 loopQuit = False
 while loopQuit == False:
 
-        print(pygame.joystick.get_count())
+        #print(pygame.joystick.get_count())
         # If joystick is not attached try to re-attach
         if pygame.joystick.get_count() == 0:
                 pygame.joystick.quit()
@@ -59,14 +59,14 @@ while loopQuit == False:
                 
                 # test joystick axes
                 outstr = ""
-                axis = [joystick.get_axis(2), joystick.get_axis(3)]
+                #axis = [joystick.get_axis(2), joystick.get_axis(3)]
                 
-                dac1.set_voltage(np.int(4096/2 + (4096/2)*axis[0]))
-                dac2.set_voltage(np.int(4096/2 + (4096/2)*axis[1]))
+                #dac1.set_voltage(np.int(4096/2 + (4096/2)*axis[0]))
+                #dac2.set_voltage(np.int(4096/2 + (4096/2)*axis[1]))
 
-                outstr = outstr + str(1) + ":" + str(axis[0]) + "|"
-                outstr = outstr + str(2) + ":" + str(axis[1]) + "|"
-         #       print(outstr)
+                #outstr = outstr + str(1) + ":" + str(axis[0]) + "|"
+                #outstr = outstr + str(2) + ":" + str(axis[1]) + "|"
+                #print(outstr)
 
                 # test controller buttons
         ##	outstr = ""

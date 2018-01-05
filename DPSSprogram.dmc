@@ -1,9 +1,10 @@
 #AUTO
 
-MT -2.5,-2,1,1  	;' Configure the motors
-CE 0,2          	;' Configure encoders to quadrature and reverse quad
+MT -2,-2,1,1  	;' Configure the motors
+CE 0,0          	;' Configure encoders to quadrature and reverse quad
 DP 0,0          	;' Define the position of the encoders
 DE 0,0          	;' same for aux encoders
+
 curx=0          	;' vars for position
 cury=0			
 
@@ -15,15 +16,24 @@ DC 2000000,2000000 	;' Set deceleration and acceleration values
 AC 2000000,2000000
 
 oncam=1 		;' Set cam as starting coord sys
-deltax=908779 		;' This is the x displacement between cam and cut origins
-deltay=9610
+deltax=	1099635;' This is the x displacement between cam and cut origins
+deltay=-63566
 
-jogspeed = 5000
+
+
+
+jogspd = 5000
 
 d_up = 0
 d_down = 0
 d_left = 0
 d_right = 0
+
+ndg_up = 0
+ndg_dwn = 0
+ndg_lft = 0
+ndg_rt = 0
+ndg_dst = 1000
 
 b_switch = 0
 b_home = 0
@@ -31,6 +41,9 @@ b_set = 0
 
 x_enable = 0
 y_enable = 0
+
+homex = _TPA
+homey = _TPB
 
 a3 = 0 ;' speed select for nudges
 
@@ -72,22 +85,6 @@ JP#LOOP,((@ABS[xangle]>0.1)|(@ABS[yangle]>0.1))
 #PADLOOP 							
 ;' Loop for keypad nudge movements
 
-IF (a3<0)
-  a3=0
-ENDIF
-IF (a3>5)
-  a3=5
-ENDIF
-IF (a3<0.68)
-  jogspd=10
-ENDIF
-IF ((a3>=0.68)&(a3<2.54))
-  jogspd=(48.39*a3)-22.9
-ENDIF
-IF (a3>=2.54)
-  jogspd=(26450*a3*a3*a3)-(201500*a3*a3)+(514400*a3)-439916
-ENDIF
-
 IF (d_up=1)
   JGY=jogspd;JP#PADLOOP
 ENDIF
@@ -100,6 +97,60 @@ ENDIF
 IF (d_right=1)
   JGX=jogspd;JP#PADLOOP
 ENDIF
+
+IF (ndg_up=1)
+  ndg_up=0
+  ST
+  MC
+  LM XY
+  VS jogspd;VA 2000000;VD 2000000;
+  LI 0, -ndg_dst
+  LE;BGS
+  MC
+  JG 0,0
+  BG X,Y
+
+ENDIF
+
+IF (ndg_dwn=1)
+  ndg_dwn=0
+  ST
+  MC
+  LM XY
+  VS jogspd;VA 2000000;VD 2000000;
+  LI 0, ndg_dst
+  LE;BGS
+  MC
+  JG 0,0
+  BG X,Y
+ENDIF
+
+IF (ndg_lft=1)
+  ndg_lft=0  
+  ST
+  MC
+  LM XY
+  VS jogspd;VA 2000000;VD 2000000;
+  LI -ndg_dst, 0
+  LE;BGS
+  MC
+  JG 0,0
+  BG X,Y
+ENDIF
+
+IF (ndg_rt=1)
+  ndg_rt=0
+  ST
+  MC
+  LM XY
+  VS jogspd;VA 2000000;VD 2000000;
+  LI ndg_dst,0
+  LE;BGS
+  MC
+  JG 0,0
+  BG X,Y
+ENDIF
+
 JP#LOOP
 
 #SWITCH 
@@ -108,9 +159,9 @@ MC
 LM XY
 VS 400000;VA 2000000;VD 2000000;
 IF (oncam=1) 
-  curx=_TPA  
-  cury=_TPB
-  LI deltax-curx-1000,deltay-cury-1000
+  movex=_TPA - deltax
+  movey=_TPB - deltay
+  LI movex-1000,movey-1000
   LE;BGS 
   MC     
   WT 100 
@@ -118,22 +169,25 @@ IF (oncam=1)
   acty=_TPB
   VS 40000;VA 400000;VD 400000;
   ST;MC;LM XY
-  LI (deltax-actx),(deltay-acty)
+  LI actx+movex,acty+movey
   LE;BGS;MC
-  WT 100
+  WT 500
+  VS 4000;VA 40000;VD 40000;
   actx=_TPA
   acty=_TPB
   ST;MC;LM XY
-  LI (deltax-actx),(deltay-acty)
+  LI actx+movex,acty+movey
   LE;BGS
   MC
   oncam=0
   CB 1
+  DP 0,0
+  DE 0,0
 ELSE
   IF (oncam=0)
-    curx=_TPA
-    cury=_TPB
-    LI -curx-1000,-cury-1000
+    movex=_TPA + deltax
+    movey=_TPB + deltay
+    LI movex-1000,movey-1000
     LE;BGS
     MC
     WT 100
@@ -141,21 +195,28 @@ ELSE
     acty=_TPB
     VS 40000;VA 400000;VD 400000;
     ST;MC;LM XY
-    LI -actx,-acty
+    LI actx+movex,acty+movey
     LE;BGS
     MC
-    WT 100
+    WT 500
+    VS 4000;VA 40000;VD 40000;
     actx=_TPA
     acty=_TPB
     ST;MC;LM XY
-    LI -actx,-acty
+    LI actx+movex,acty+movey
     LE;BGS
     MC
     oncam=1
     SB 1
+    DP 0,0
+    DE 0,0
   ENDIF
 ENDIF
+DP 0,0
+DE 0,0
 b_switch = 0
+homex = _TPA
+homey = _TPB
 JG 0,0
 BG X,Y
 JP#LOOP
@@ -166,10 +227,9 @@ ST
 MC
 LM XY
 VS 400000;VA 2000000;VD 2000000;
-IF (oncam=1)
   curx=_TPA
   cury=_TPB
-  LI -curx-1000,-cury-1000
+  LI -1000,-1000
   LE;BGS
   MC
   WT 100
@@ -179,41 +239,22 @@ IF (oncam=1)
   ST
   MC
   LM XY
-  LI -actx,-acty
+  LI actx,acty
   LE;BGS
   MC
   WT 100
   actx=_TPA
   acty=_TPB
+  VS 4000;VA 40000;VD 40000;
   ST
   MC
   LM XY
-  LI -actx,-acty
+  LI actx,acty
   LE;BGS
   MC
-ELSE
-  curx=_TPA
-  cury=_TPB
-  LI -curx-1000+deltax,-cury-1000+deltay
-  LE;BGS
-  MC
-  WT 100
-  actx=_TPA
-  acty=_TPB
-  VS 40000;VA 400000;VD 400000;
-  ST;MC;LM XY
-  LI -actx+deltax,-acty+deltay
-  LE;BGS
-  MC
-  WT 100
-  actx=_TPA
-  acty=_TPB
-  ST;MC;LM XY
-  LI -actx+deltax,-acty+deltay
-  LE;BGS
-  MC
-ENDIF
 b_home = 0
+homex = _TPA
+homey = _TPB
 JG 0,0
 BG X,Y
 JP#LOOP
@@ -227,15 +268,33 @@ DE 0,0
 IF (oncam=1)
   DP 0,0
   DE 0,0
+  homex = 0
+  homey = 0
 ELSE
-  DP deltax,deltay
-  DE deltax,deltay
+  DP 0, 0
+  DE 0, 0
+  homex = 0
+  homey = 0
 ENDIF
 b_set = 0
 JG 0,0
 BG X,Y
 JP#LOOP
 
+#HOMEMOT
+SP 50000, 50000
+HM 
+BG XY
+AM XY
+ST
+MC
+LM XY
+VS 40000;VA 20000;VD 20000;
+LI 1560000,850000
+LE;BGS
+MC
+oncam = 1
+JP#SETORIG
 
 #LIMSWI
 DC 10000000,10000000
@@ -269,3 +328,5 @@ CB 3
 JG 0,0
 BG XY
 RE
+
+
